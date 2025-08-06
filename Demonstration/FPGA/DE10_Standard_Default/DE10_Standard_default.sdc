@@ -10,7 +10,7 @@ create_clock -period 20.0 [get_ports CLOCK2_50]
 create_clock -period 20.0 [get_ports CLOCK3_50]
 create_clock -period 20.0 [get_ports CLOCK4_50]
 create_clock -period 20.0 [get_ports CLOCK_50]
-
+create_clock -period "18.0MHz" [get_ports AUD_XCK]
 # for enhancing USB BlasterII to be reliable, 25MHz
 create_clock -name {altera_reserved_tck} -period 40 {altera_reserved_tck}
 set_input_delay -clock altera_reserved_tck -clock_fall 3 [get_ports altera_reserved_tdi]

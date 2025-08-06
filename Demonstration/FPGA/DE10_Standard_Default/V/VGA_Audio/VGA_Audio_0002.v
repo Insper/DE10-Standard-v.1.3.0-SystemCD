@@ -28,7 +28,7 @@ module  VGA_Audio_0002(
 		.output_clock_frequency0("25.000000 MHz"),
 		.phase_shift0("0 ps"),
 		.duty_cycle0(50),
-		.output_clock_frequency1("18.000000 MHz"),
+		.output_clock_frequency1("12.288135 MHz"),
 		.phase_shift1("0 ps"),
 		.duty_cycle1(50),
 		.output_clock_frequency2("25.000000 MHz"),

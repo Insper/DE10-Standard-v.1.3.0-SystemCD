@@ -11,9 +11,9 @@ module AUDIO_DAC (	//	Memory Side
 				    iCLK_18_4,
 					iRST_N	);				
 
-parameter	REF_CLK			=	18432000;	//	18.432	MHz
-parameter	SAMPLE_RATE		=	48000;		//	48		KHz
-parameter	DATA_WIDTH		=	16;			//	16		Bits
+parameter	REF_CLK			=	12288135;//<<< 18432000;	//	18.432	MHz
+parameter	SAMPLE_RATE		=	48000;	//	48		KHz
+parameter	DATA_WIDTH		=	16;		//	16		Bits
 parameter	CHANNEL_NUM		=	2;			//	Dual Channel
 
 parameter	SIN_SAMPLE_DATA	=	48;
@@ -34,6 +34,7 @@ parameter	SIN_SANPLE		=	0;
 parameter	FLASH_DATA		=	1;
 parameter	SDRAM_DATA		=	2;
 parameter	SRAM_DATA		=	3;
+
 //////////////////////////////////////////////////
 //	Memory Side
 output	[FLASH_ADDR_WIDTH-1:0]	oFLASH_ADDR;
@@ -43,7 +44,7 @@ input	[SDRAM_DATA_WIDTH-1:0]	iSDRAM_DATA;
 output	[SRAM_ADDR_WIDTH:0]		oSRAM_ADDR;
 input	[SRAM_DATA_WIDTH-1:0]	iSRAM_DATA;	
 //	Audio Side
-output			oAUD_DATA;
+output	reg		oAUD_DATA;
 output			oAUD_LRCK;
 output	reg		oAUD_BCK;
 //	Control Signals
@@ -73,6 +74,8 @@ reg							LRCK_1X;
 reg							LRCK_2X;
 reg							LRCK_4X;
 
+
+
 ////////////	AUD_BCK Generator	//////////////
 always@(posedge iCLK_18_4 or negedge iRST_N)
 begin
@@ -92,6 +95,7 @@ begin
 		BCK_DIV		<=	BCK_DIV+1;
 	end
 end
+
 //////////////////////////////////////////////////
 ////////////	AUD_LRCK Generator	//////////////
 always@(posedge iCLK_18_4 or negedge iRST_N)
@@ -133,7 +137,10 @@ begin
 		LRCK_4X_DIV		<=	LRCK_4X_DIV+1;		
 	end
 end
+
+
 assign	oAUD_LRCK	=	LRCK_1X;
+
 //////////////////////////////////////////////////
 //////////	Sin LUT ADDR Generator	//////////////
 always@(negedge LRCK_1X or negedge iRST_N)
@@ -148,6 +155,8 @@ begin
 		SIN_Cont	<=	0;
 	end
 end
+
+
 //////////////////////////////////////////////////
 //////////	FLASH ADDR Generator	//////////////
 always@(negedge LRCK_4X or negedge iRST_N)
@@ -255,10 +264,49 @@ begin
 	else
 	SEL_Cont	<=	SEL_Cont+1;
 end
-assign	oAUD_DATA	=	(iSrc_Select==SIN_SANPLE)	?	Sin_Out[~SEL_Cont]	:
-						(iSrc_Select==FLASH_DATA)	?	FLASH_Out[~SEL_Cont]:
-						(iSrc_Select==SDRAM_DATA)	?	SDRAM_Out[~SEL_Cont]:
-														SRAM_Out[~SEL_Cont]	;												
+
+//ORG assign	oAUD_DATA	=	(iSrc_Select==SIN_SANPLE)	?	Sin_Out[~SEL_Cont]	:
+//						(iSrc_Select==FLASH_DATA)	?	FLASH_Out[~SEL_Cont]:
+//						(iSrc_Select==SDRAM_DATA)	?	SDRAM_Out[~SEL_Cont]:
+//														SRAM_Out[~SEL_Cont]	;												
+
+//////////////////////////////////////////////////
+//////////	DATA_WIDTH bit counter   //////////////
+reg 	[6:0]					Data_Count;
+always@(negedge oAUD_BCK or negedge iRST_N)
+begin
+  if(!iRST_N)
+  begin
+    Data_Count <= 0;
+  end
+  else
+  begin
+    if(Data_Count >= DATA_WIDTH-1)
+	 begin
+      Data_Count <= 0;
+    end
+	 else 
+	 Data_Count <= Data_Count +1;
+  end
+end
+
+//////////////////////////////////////////////////
+//////////	I2S DATA OUT         	//////////////
+always@(negedge oAUD_BCK or negedge iRST_N)
+begin
+  if(!iRST_N)
+  begin
+    oAUD_DATA <= 0;
+  end
+  else
+  begin
+    oAUD_DATA <= Sin_Out[~Data_Count];
+  end
+end
+
+//////////////////////////////////////////////////
+
+
 //////////////////////////////////////////////////
 ////////////	Sin Wave ROM Table	//////////////
 always@(SIN_Cont)
